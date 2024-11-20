@@ -86,8 +86,16 @@ def broadcast_index(
     Returns:
         None
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    difference = len(big_shape) - len(shape)    # get dimension difference 
+    
+    for i in range(len(shape)):
+        big_dim = big_index[i + difference]
+        small_dim = shape[i]
+        
+        if small_dim == 1:
+            out_index[i] = 0    # this means the dimension is broadcasted, so map it to 0, otherwise keep it normal
+        else:
+            out_index[i] = big_dim
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -104,8 +112,20 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     Raises:
         IndexingError : if cannot broadcast
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    max_len = max(len(shape1), len(shape2))    # find the larger shape between the two
+    # pad the shorter shape with 1s so they have the same dimensions
+    padded_shape1 = (1,) * (max_len - len(shape1)) + shape1
+    padded_shape2 = (1,) * (max_len - len(shape2)) + shape2
+    
+    result_shape = []
+    for dim1, dim2 in zip(padded_shape1, padded_shape2):
+        if dim1 == dim2 or dim1 == 1 or dim2 == 1:   # make sure the dimensions are compatible
+            result_shape.append(max(dim1, dim2))     # add the larger one to the new shape
+        else:
+            raise IndexingError(f"Shapes {shape1} and {shape2} cannot be broadcast.")
+        
+    return tuple(result_shape)    # explicitly make it a tuple
+    
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
