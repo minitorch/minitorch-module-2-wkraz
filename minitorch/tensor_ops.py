@@ -268,8 +268,22 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        # loop over all indices of out tensor
+        for out_index in range(len(out)):
+            # convert the flat tensor to a multidimensional index w/ our function we defined earlier
+            out_multidim_index = [0] * len(out_shape)
+            to_index(out_index, out_shape, out_multidim_index)
+            
+            # map the multidimensional index to the input tensor
+            in_multidim_index = [0] * len(in_shape)
+            broadcast_index(out_multidim_index, out_shape, in_shape, in_multidim_index)
+            
+            # convert the multidimensional index to a flat tensor
+            in_flat_index = index_to_position(in_multidim_index, in_strides)
+            
+            out[out_index] = fn(in_storage[in_flat_index])
+            
+        
 
     return _map
 
@@ -318,8 +332,25 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        for out_index in range(len(out)):
+            # convert flat index to multidimensional index
+            out_multidim_index = [0] * len(out_shape)
+            to_index(out_index, out_shape, out_multidim_index)
+            
+            # map the multidim index to tensor a
+            a_multidim_index = [0] * len(a_shape)
+            broadcast_index(out_multidim_index, out_shape, a_shape, a_multidim_index)
+            
+            # map it to b now
+            b_multidim_index = [0] * len(b_shape)
+            broadcast_index(out_multidim_index, out_shape, b_shape, b_multidim_index)
+            
+            # convert the multidim indices to flat indices
+            a_flat_index = index_to_position(a_multidim_index, a_strides)
+            b_flat_index = index_to_position(b_multidim_index, b_strides)
+            
+            # apply fn to values a and b in storage (with flat indices since that's how they're stored)
+            out[out_index] = fn(a_storage[a_flat_index], b_storage[b_flat_index])
 
     return _zip
 
@@ -354,9 +385,20 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
-
+        out_index = np.zeros(len(out_shape)).astype(int)
+        for i in range(len(out)):
+            # convert flat index to multidim index
+            to_index(i, out_shape, out_index)
+            
+            # iterate over all elements in reduced dimension
+            for j in range(a_shape[reduce_dim]):
+                out_index_temp = out_index[reduce_dim]      # temporary
+                out_index[reduce_dim] = j
+                # convert multidim index to flat
+                pos = index_to_position(out_index, a_strides)
+                # apply reduction function to value in a_storage and accumulate the result in out[i]
+                out[i] = fn(a_storage[pos], out[i])
+                out_index[reduce_dim] = out_index_temp      # restore original value
     return _reduce
 
 
