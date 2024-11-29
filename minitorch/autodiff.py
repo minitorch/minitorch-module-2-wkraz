@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Tuple
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, runtime_checkable
 
 # ## Task 1.1
 # Central Difference calculation
@@ -22,12 +22,22 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    
+    vals_plus_epsilon = list(vals)
+    vals_minus_epsilon = list(vals)
+    
+    # change the arg'th value by order of epsilon
+    vals_plus_epsilon[arg] += epsilon
+    vals_minus_epsilon[arg] -= epsilon
+    
+    return (f(*vals_plus_epsilon) - f(*vals_minus_epsilon)) / (2 * epsilon) # central difference formula
+    
 
 
 variable_count = 1
 
 
+@runtime_checkable
 class Variable(Protocol):
     def accumulate_derivative(self, x: Any) -> None:
         pass
@@ -60,7 +70,19 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    visited = set()
+    sorted_variables = []
+    
+    def dfs(var):
+        if var.unique_id in visited or var.is_constant():
+            return
+        visited.add(var.unique_id)
+        for parent in var.parents:
+            dfs(parent)            # traverse the parents of the current node
+        sorted_variables.append(var) # now we can add it to the sorted list
+        
+    dfs(variable)                    # do dfs on rightmost variable
+    return reversed(sorted_variables) # reverse to get topological order
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -74,7 +96,19 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    derivatives = {variable.unique_id: deriv}     # dictionary to store derivative for each variable
+    
+    # process variables in topological order
+    for var in topological_sort(variable):
+        if var.is_leaf():
+            var.accumulate_derivative(derivatives[var.unique_id])   # accumulate derivatives for leaf nodes
+        else:
+            # if not leaf node, propogate derivatives to parents with chain rule
+            for parent, partial_deriv in var.chain_rule(derivatives[var.unique_id]):
+                # if we don't know its derivative, add it to dict and set it to 0
+                if parent.unique_id not in derivatives:
+                    derivatives[parent.unique_id] = 0
+                derivatives[parent.unique_id] += partial_deriv 
 
 
 @dataclass

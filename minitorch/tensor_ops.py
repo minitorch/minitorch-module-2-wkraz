@@ -268,8 +268,18 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        out_index = np.empty(len(out_shape), dtype=int)
+        in_index = np.empty(len(in_shape), dtype=int)
+
+        for ordinal in range(len(out)):
+            to_index(ordinal, out_shape, out_index)
+
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+
+            out_position = index_to_position(out_index, out_strides)
+            in_position = index_to_position(in_index, in_strides)
+
+            out[out_position] = fn(in_storage[in_position])
 
     return _map
 
@@ -318,8 +328,21 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        out_index = np.empty(len(out_shape), dtype=int)
+        a_index = np.empty(len(a_shape), dtype=int)
+        b_index = np.empty(len(b_shape), dtype=int)
+
+        for ordinal in range(len(out)):
+            to_index(ordinal, out_shape, out_index)
+            
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+
+            out_position = index_to_position(out_index, out_strides)
+            a_position = index_to_position(a_index, a_strides)
+            b_position = index_to_position(b_index, b_strides)
+
+            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
 
     return _zip
 
@@ -354,8 +377,29 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        out_index = np.empty(len(out_shape), dtype=int)
+        a_index = np.empty(len(a_shape), dtype=int)
+
+        for ordinal in range(len(out)):
+            to_index(ordinal, out_shape, out_index)
+
+            out_position = index_to_position(out_index, out_strides)
+
+            current_value = None
+
+            for i in range(a_shape[reduce_dim]):
+                for j in range(len(out_index)):
+                    a_index[j] = out_index[j]
+                a_index[reduce_dim] = i
+
+                a_position = index_to_position(a_index, a_strides)
+
+                if current_value is None:
+                    current_value = a_storage[a_position]
+                else:
+                    current_value = fn(current_value, a_storage[a_position])
+
+            out[out_position] = current_value
 
     return _reduce
 

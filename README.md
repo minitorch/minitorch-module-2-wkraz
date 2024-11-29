@@ -17,3 +17,22 @@ python sync_previous_module.py previous-module-dir current-module-dir
 The files that will be synced are:
 
         minitorch/operators.py minitorch/module.py minitorch/autodiff.py minitorch/scalar.py minitorch/module.py project/run_manual.py project/run_scalar.py
+
+## Training
+### Simple Dataset
+Epoch  500  loss  34.2963900127201 correct 28
+
+### Diag Dataset
+Epoch  500  loss  21.98339397025317 correct 42
+
+### Split Dataset
+Epoch  500  loss  34.2963900127201 correct 28
+
+### Xor Dataset
+Epoch  500  loss  34.65725902809726 correct 25
+
+### Circle Dataset
+Epoch  500  loss  30.543115102863727 correct 35
+
+### Spiral Dataset
+Epoch  500  loss  34.65725902809726 correct 25
