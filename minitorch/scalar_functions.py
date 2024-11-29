@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import minitorch
 
 from . import operators
-from .autodiff import Context
+from .autodiff import Context, central_difference
 
 if TYPE_CHECKING:
     from typing import Tuple
@@ -74,11 +74,11 @@ class Add(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        return operators.add(a, b)
+        return a + b
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, ...]:
-        return (d_output, d_output)
+        return d_output, d_output
 
 
 class Log(ScalarFunction):
@@ -92,13 +92,14 @@ class Log(ScalarFunction):
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
         (a,) = ctx.saved_values
-        da = operators.log_back(a, d_output)
-        return (da,)   # force it into a tuple
+        return operators.log_back(a, d_output)
 
+
+# To implement.
 
 
 class Mul(ScalarFunction):
-    "Multiplication function $f(x, y) = x * y$"
+    "Multiplication function"
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
@@ -108,48 +109,54 @@ class Mul(ScalarFunction):
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
         a, b = ctx.saved_values
-        return (d_output * b, d_output * a)  # df/da = b, df/db = a
+
+        return d_output * b, d_output * a
 
 
 class Inv(ScalarFunction):
-    "Inverse function $f(x) = 1 / x$"
+    "Inverse function"
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         ctx.save_for_backward(a)
+
         return operators.inv(a)
 
     @staticmethod
-    def backward(ctx: Context, d_output: float) -> Tuple[float]:
+    def backward(ctx: Context, d_output: float) -> float:
         (a,) = ctx.saved_values
-        return (operators.inv_back(a, d_output),)  # Return as a tuple
+
+        return operators.inv_back(a, d_output)
+
 
 class Neg(ScalarFunction):
     "Negation function"
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
-        return float(operators.neg(a))
+        ctx.save_for_backward(a)
+        return -a
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        return (operators.neg(d_output),)
+        (a, ) = ctx.saved_values
+        return -d_output
 
 
 class Sigmoid(ScalarFunction):
-    "Sigmoid function $f(x) = 1 / (1 + exp(-x))$"
+    "Sigmoid function"
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
-        result = operators.sigmoid(a)
-        ctx.save_for_backward(result)  # Save the result of sigmoid(a)
-        return result
+        ctx.save_for_backward(a)
+
+        return operators.sigmoid(a)
 
     @staticmethod
-    def backward(ctx: Context, d_output: float) -> Tuple[float]:
-        (sigmoid_val,) = ctx.saved_values
-        return (d_output * sigmoid_val * (1 - sigmoid_val),)  # Correct derivative
+    def backward(ctx: Context, d_output: float) -> float:
+        (a, ) = ctx.saved_values
 
+        return central_difference(operators.sigmoid, a) * d_output
 
 
 class ReLU(ScalarFunction):
@@ -158,12 +165,14 @@ class ReLU(ScalarFunction):
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         ctx.save_for_backward(a)
-        return float(operators.relu(a))
+
+        return operators.relu(a)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        (a,) = ctx.saved_values
-        return (operators.relu_back(a, d_output),)
+        (a, ) = ctx.saved_values
+
+        return operators.relu_back(a, d_output)
 
 
 class Exp(ScalarFunction):
@@ -171,14 +180,14 @@ class Exp(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
-        result = operators.exp(a)
-        ctx.save_for_backward(result)
-        return result
+        ctx.save_for_backward(a)
+
+        return operators.exp(a)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        (result,) = ctx.saved_values  # e^a
-        return (d_output * result,)
+        (a, ) = ctx.saved_values
+        return operators.exp(a) * d_output
 
 
 class LT(ScalarFunction):
@@ -187,12 +196,17 @@ class LT(ScalarFunction):
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         ctx.save_for_backward(a, b)
-        return float(operators.lt(a, b))
+
+        return operators.lt(a, b)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
-        return (0.0, 0.0)  # not differentiable since it's a step function
+        a, b = ctx.saved_values
 
+        lt_back_results_0 = central_difference(operators.lt, a, b, arg=0)
+        lt_back_results_1 = central_difference(operators.lt, a, b, arg=1)
+
+        return lt_back_results_0 * d_output, lt_back_results_1 * d_output
 
 class EQ(ScalarFunction):
     "Equal function $f(x) =$ 1.0 if x is equal to y else 0.0"
@@ -200,8 +214,14 @@ class EQ(ScalarFunction):
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
         ctx.save_for_backward(a, b)
-        return float(operators.eq(a, b))
+
+        return operators.eq(a, b)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
-        return (0.0, 0.0)   # same as LT, not differentiable
+        a, b = ctx.saved_values
+
+        eq_back_results_0 = central_difference(operators.eq, a, b, arg=0)
+        eq_back_results_1 = central_difference(operators.eq, a, b, arg=1)
+
+        return eq_back_results_0 * d_output, eq_back_results_1 * d_output

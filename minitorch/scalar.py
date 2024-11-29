@@ -93,7 +93,7 @@ class Scalar:
 
     def __add__(self, b: ScalarLike) -> Scalar:
         return Add.apply(self, b)
-        
+
     def __bool__(self) -> bool:
         return bool(self.data)
 
@@ -107,7 +107,7 @@ class Scalar:
         return EQ.apply(self, b)
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        return Add.apply(self, Neg.apply(b)) # a - b = a + (-b)
+        return Add.apply(self, -b)
 
     def __neg__(self) -> Scalar:
         return Neg.apply(self)
@@ -163,20 +163,9 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        fn = h.last_fn
-        inputs = h.inputs
+        derivatives = h.last_fn._backward(h.ctx, d_output)
         
-        local_derivs = fn.backward(h.ctx, d_output)
-        
-        result = []
-        
-        # Pair each variable with its respective local derivative
-        for input_var, local_deriv in zip(inputs, local_derivs):
-            # only include a variable that requires a gradient
-            if input_var.history is not None: # if it has a history, it requires gradients (instead of .requires_grad)
-                result.append((input_var, local_deriv))
-        
-        return result
+        return zip(h.inputs, derivatives)
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """

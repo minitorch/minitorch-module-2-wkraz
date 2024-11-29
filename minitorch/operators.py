@@ -1,250 +1,129 @@
-"""Collection of the core mathematical operators used throughout the code base."""
+"""
+Collection of the core mathematical operators used throughout the code base.
+"""
 
 import math
+from typing import Callable, Iterable
 
 # ## Task 0.1
-from typing import Callable, Iterable, Optional
-
 #
 # Implementation of a prelude of elementary functions.
 
 
-# Mathematical functions:
-# - mul
-def mul(x: float, y: float) -> float:
-    return x * y
+def is_close(num1: float, num2: float) -> bool:
+    return abs(num1 - num2) < 1e-2 
 
 
-# - id
-def id(x: float) -> float:
-    return x
+def mul(num1: float, num2: float) -> float:
+    return num1 * num2
 
 
-# - add
-def add(x: float, y: float) -> float:
-    return x + y
+def max(num1: float, num2: float) -> float:
+    return num1 if num1 > num2 else num2
 
 
-# - neg
-def neg(x: float) -> float:
-    return -x
+def add(num1: float, num2: float) -> float:
+    return num1 + num2
 
 
-# - lt
-def lt(x: float, y: float) -> bool:
-    return x < y
+def neg(num1: float) -> float:
+    return - num1
 
 
-# - eq
-def eq(x: float, y: float) -> bool:
-    return x == y
+def id(num: float) -> float:
+    return num
 
 
-# - max
-def max(x: float, y: float) -> float:
-    if x >= y:
-        return x
-    return y
+def inv(num: float) -> float:
+    return 1.0 / num
 
 
-# - is_close
-def is_close(x: float, y: float, tol: float = 1e-2) -> bool:
-    return abs(x - y) < tol
+def relu(num: float) -> float:
+    return num if num > 0 else 0.0
 
 
-# - sigmoid
-def sigmoid(x: float) -> float:
-    if x >= 0:
-        return (1.0) / (1.0 + math.exp(-x))
-    else:
-        return (math.exp(x)) / (1.0 + math.exp(x))
+def relu_back(num1: float, num2: float) -> float:
+    return num2 if num1 > 0 else 0.0
 
 
-# - relu
-def relu(x: float) -> float:
-    return x if x > 0 else 0
+def lt(num1: float, num2: float) -> float:
+    return float(num1 < num2)
 
 
-# - log
-def log(x: float) -> float:
-    return math.log(x)
+def eq(num1: float, num2: float) -> float:
+    return float(num1 == num2)
 
 
-# - exp
-def exp(x: float) -> float:
-    return math.exp(x)
+def sigmoid(num: float) -> float:
+    return 1.0/(1.0 + math.exp(-num)) if num >=0 else math.exp(num)/(1.0 + math.exp(num))
 
 
-# - log_back
-def log_back(x: float, d: float) -> float:
-    return d / x
+def log(num: float) -> float:
+    return math.log(num + 1e-6)
 
 
-# - inv
-def inv(x: float) -> float:
-    return 1 / x
+def exp(num: float) -> float:
+    return math.exp(num)
 
 
-# - inv_back
-def inv_back(x: float, d: float) -> float:
-    return -d / (x**2)
+def log_back(num: float,  d: float) -> float:
+    return d / num
 
 
-# - relu_back
-def relu_back(x: float, d: float) -> float:
-    return d if x > 0 else 0
-
-
-#
-# For sigmoid calculate as:
-# $f(x) =  \frac{1.0}{(1.0 + e^{-x})}$ if x >=0 else $\frac{e^x}{(1.0 + e^{x})}$
-# For is_close:
-# $f(x) = |x - y| < 1e-2$
+def inv_back(num: float, d: float) -> float:
+    return float(-d * 1 / (num * num))
 
 
 # ## Task 0.3
 
 # Small practice library of elementary higher-order functions.
 
-
 # Implement the following core functions
 # - map
-def map(fn: Callable[[float], float], lst: Iterable[float]) -> Iterable[float]:
-    """Mapping an iterable to another iterable where each element is sent into a function
-
-    Args:
-    ----
-        fn: A function takes in a float as an argument and returns a float
-        lst: An iterable of floats
-
-    Returns:
-    -------
-        An iterable of floats
-
-    """
-    return [fn(x) for x in lst]
-
-
 # - zipWith
-def zipWith(
-    fn: Callable[[float, float], float], lst1: Iterable[float], lst2: Iterable[float]
-) -> Iterable[float]:
-    """Combines elements from 2 iterables given a function
-
-    Args:
-    ----
-        fn: A function takes in 2 floats as an argument and returns a float
-        lst1: An iterable of floats
-        lst2: The second iterable of floats
-
-    Returns:
-    -------
-        An iterable of floats
-
-    """
-    return [fn(x, y) for x, y in zip(lst1, lst2)]
-
-
 # - reduce
-def reduce(
-    fn: Callable[[float, float], float],
-    lst: Iterable[float],
-    initial: Optional[float] = None,
-) -> float:
-    """Reduces an iterable to a single value given a function.
-
-    Args:
-    ----
-        fn: A function that takes in 2 floats as an argument and returns a float.
-        lst: An iterable of floats.
-        initial: The initial value to use when the list is empty (default is None).
-
-    Returns:
-    -------
-        A float.
-
-    Raises:
-    ------
-        ValueError: If the list is empty and no initial value is provided.
-
-    """
-    iterator = iter(lst)
-    if initial is not None:
-        value = initial
-    else:
-        try:
-            value = next(iterator)  # Start with the first element
-        except StopIteration:
-            raise ValueError("reduce() of an empty list with no initial value")
-
-    for element in iterator:
-        value = fn(value, element)
-
-    return value
-
-
 #
 # Use these to implement
 # - negList : negate a list
-def negList(lst: Iterable[float]) -> Iterable[float]:
-    """Negates all elements in an iterable using a map and the neg function
-
-    Args:
-    ----
-        lst: An iterable of floats
-
-    Returns:
-    -------
-        An iterable of floats where each element is negated
-
-    """
-    return map(neg, lst)
-
-
 # - addLists : add two lists together
-def addLists(lst1: Iterable[float], lst2: Iterable[float]) -> Iterable[float]:
-    """Adds two lists together
-
-    Args:
-    ----
-        lst1: An iterable of floats
-        lst2: An iterable of floats
-
-    Returns:
-    -------
-        An iterable of floats that is the lists added together
-
-    """
-    return zipWith(add, lst1, lst2)
-
-
 # - sum: sum lists
-def sum(lst: Iterable[float]) -> float:
-    """Gets the sum of all elements in a list
-
-    Args:
-    ----
-        lst: An iterable of floats
-
-    Returns:
-    -------
-        A float that is the sum of all elements in the list
-
-    """
-    return reduce(add, lst, initial=0)
-
-
 # - prod: take the product of lists
-def prod(lst: Iterable[float]) -> float:
-    """Gets the product of all elements in a list
 
-    Args:
-    ----
-        lst: An iterable of floats
 
-    Returns:
-    -------
-        A float that is the product of all elements in the list
+def map(fn: Callable[[float], float]) -> Callable[[Iterable[float]], Iterable[float]]:
+    return lambda x: [fn(el) for el in x]
 
-    """
-    return reduce(mul, lst)
+
+def negList(ls: Iterable[float]) -> Iterable[float]:
+    return map(neg)(ls)
+
+
+def zipWith(
+    fn: Callable[[float, float], float]
+) -> Callable[[Iterable[float], Iterable[float]], Iterable[float]]:
+    return lambda x, y: [fn(x[i], y[i]) for i in range(len(x))]
+
+
+def addLists(ls1: Iterable[float], ls2: Iterable[float]) -> Iterable[float]:
+    return zipWith(add)(ls1, ls2)
+
+
+def reduce(
+    fn: Callable[[float, float], float], start: float
+) -> Callable[[Iterable[float]], float]:
+    def foo(ls: Iterable[float]) -> float:
+        old_result = start
+        for el in ls:
+            old_result = fn(el, old_result)
+        
+        return old_result
+
+    return foo
+
+
+def sum(ls: Iterable[float]) -> float:
+    return reduce(add, 0.0)(ls)
+
+
+def prod(ls: Iterable[float]) -> float:
+    return reduce(mul, 1.0)(ls)
